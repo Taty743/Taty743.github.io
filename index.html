@@ -9,29 +9,26 @@
 </head>
 <body>
     <h1>Barcode Scanner</h1>
-    
-    <!-- Video element to display camera feed -->
-    <video id="video" width="300" height="300" autoplay></video>
-    
+
     <!-- Display the last scanned barcode text -->
     <p>Scanned Barcode: <span id="output"></span></p>
-    
+
     <!-- List to store all scanned barcodes -->
     <h2>Scanned Barcodes:</h2>
     <ul id="barcode-list"></ul>
-    
+
     <script>
         const output = document.getElementById("output");
         const barcodeList = document.getElementById("barcode-list");
-        
+
         // Initialize QuaggaJS for barcode scanning
         Quagga.init({
             inputStream: {
                 name: "Live",
-                type: "LiveStream",
-                target: document.querySelector("#video"), // Use the video element
+                type: "ImageStream",
+                target: document.body, // We don't need the video anymore
                 constraints: {
-                    facingMode: "environment" // Use the back camera
+                    facingMode: "environment" // Use the back camera (not needed anymore but kept for reference)
                 }
             },
             decoder: {
@@ -48,12 +45,16 @@
         // Listen for detected barcodes
         Quagga.onDetected(function(result) {
             const barcode = result.codeResult.code; // Extract the barcode text
-            output.textContent = barcode; // Display the latest scanned barcode
-            
-            // Create a new list item and add it to the list
-            const listItem = document.createElement("li");
-            listItem.textContent = barcode;
-            barcodeList.appendChild(listItem);
+
+            // Display the barcode once
+            if (output.textContent !== barcode) {
+                output.textContent = barcode; // Display the latest scanned barcode
+
+                // Create a new list item and add it to the list
+                const listItem = document.createElement("li");
+                listItem.textContent = barcode;
+                barcodeList.appendChild(listItem);
+            }
         });
     </script>
 </body>
