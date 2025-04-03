@@ -24,11 +24,23 @@
         const output = document.getElementById("output");
         const barcodeList = document.getElementById("barcode-list");
 
-        // Function to check if the date is in the past
+        // Function to check if the date is in the past (DD/MM/YYYY format)
         function isPastDate(dateStr) {
+            // Split the barcode text (DD/MM/YYYY) into day, month, and year
+            const dateParts = dateStr.split('/');
+            const day = parseInt(dateParts[0], 10); // Day
+            const month = parseInt(dateParts[1], 10) - 1; // Month (zero-based)
+            const year = parseInt(dateParts[2], 10); // Year
+
+            // Create a Date object from the parsed date
+            const scannedDate = new Date(year, month, day);
+
+            // Get the current date (without time for comparison)
             const currentDate = new Date();
-            const scannedDate = new Date(dateStr);
-            return scannedDate < currentDate; // Returns true if the scanned date is in the past
+            currentDate.setHours(0, 0, 0, 0); // Set time to 00:00:00 for comparison
+
+            // Return true if the scanned date is in the past
+            return scannedDate < currentDate;
         }
 
         // Initialize QuaggaJS for barcode scanning
