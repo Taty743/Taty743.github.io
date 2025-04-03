@@ -10,6 +10,9 @@
 <body>
     <h1>Barcode Scanner</h1>
 
+    <!-- Video element to display camera feed -->
+    <video id="video" width="300" height="300" autoplay></video>
+    
     <!-- Display the last scanned barcode text -->
     <p>Scanned Barcode: <span id="output"></span></p>
 
@@ -25,10 +28,10 @@
         Quagga.init({
             inputStream: {
                 name: "Live",
-                type: "ImageStream",
-                target: document.body, // We don't need the video anymore
+                type: "LiveStream",
+                target: document.querySelector("#video"), // Use the video element
                 constraints: {
-                    facingMode: "environment" // Use the back camera (not needed anymore but kept for reference)
+                    facingMode: "environment" // Use the back camera
                 }
             },
             decoder: {
