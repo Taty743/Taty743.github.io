@@ -112,6 +112,17 @@
             const listItem = document.createElement("li");
             listItem.textContent = barcode;
             barcodeList.appendChild(listItem);
+
+            // Reiniciar el proceso después de haber escaneado la fecha y el producto
+            if (isDateScanned && isProductScanned) {
+                // Mostrar los resultados finales en consola
+                console.log(`Fecha: ${scannedDate}, Producto: ${scannedProduct}`);
+                
+                // Puedes agregar un mensaje o una acción aquí si deseas reiniciar el escaneo
+                // Ejemplo: reiniciar la cámara o mostrar un botón de reinicio
+                // o recargar la página automáticamente después de procesar ambos códigos
+                // location.reload(); // Esto recargaría la página si se desea reiniciar
+            }
         }
 
         // Configuración de QuaggaJS para detectar el código de barras
