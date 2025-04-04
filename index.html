@@ -21,6 +21,10 @@
         const output = document.getElementById("output");
         const barcodeList = document.getElementById("barcode-list");
 
+        // Variables para almacenar los códigos escaneados
+        let scannedDate = null;
+        let scannedProduct = null;
+
         // Función para verificar si la fecha está en el pasado (formato DD/MM/YYYY)
         function isPastDate(dateStr) {
             const dateParts = dateStr.split('/');
@@ -70,28 +74,33 @@
 
         // Función para manejar el código de barras detectado
         function handleDetectedBarcode(barcode) {
-            // Mostrar el código de barras en la página
-            if (output.textContent !== barcode) {
-                output.textContent = barcode;
-
-                // Crear un nuevo elemento de lista y agregarlo
-                const listItem = document.createElement("li");
-                listItem.textContent = barcode;
-
-                // Extraer la fecha y el texto adicional
+            // Verificar si el código es una fecha o un producto
+            if (scannedDate === null) {
+                // Intentar interpretar la fecha (suponemos que el primer código es la fecha)
                 const dateMatch = barcode.match(/^(\d{2}\/\d{2}\/\d{4})/); // Buscar la fecha al principio
                 if (dateMatch) {
-                    const dateStr = dateMatch[1]; // Fecha encontrada
-
-                    // Verificar si la fecha está en el pasado
-                    if (isPastDate(dateStr)) {
-                        const extraText = barcode.replace(dateStr, '').trim(); // Texto posterior a la fecha
-                        alert(`"${extraText}" está caducado.`); // Mostrar el mensaje
-                    }
+                    scannedDate = dateMatch[1];
+                    output.textContent = `Fecha escaneada: ${scannedDate}`;
+                    console.log("Fecha escaneada:", scannedDate);
                 }
-
-                barcodeList.appendChild(listItem);
             }
+
+            if (scannedDate !== null && scannedProduct === null) {
+                // Si ya tenemos una fecha, ahora esperamos un producto
+                scannedProduct = barcode;
+                output.textContent = `Producto escaneado: ${scannedProduct}`;
+                console.log("Producto escaneado:", scannedProduct);
+
+                // Después de escanear el producto, verificamos la fecha
+                if (isPastDate(scannedDate)) {
+                    alert(`El producto "${scannedProduct}" está caducado!`);
+                }
+            }
+
+            // Mostrar los códigos escaneados en la lista
+            const listItem = document.createElement("li");
+            listItem.textContent = barcode;
+            barcodeList.appendChild(listItem);
         }
 
         // Configuración de QuaggaJS para detectar el código de barras
