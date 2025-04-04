@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Escáner de Códigos de Barras</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
     <h1>Escáner de Códigos de Barras</h1>
 
     <!-- Elemento de video para mostrar el feed de la cámara -->
     <video id="video" width="300" height="300" autoplay></video>
-    
+
     <p>Código de barras escaneado: <span id="output"></span></p>
 
     <h2>Códigos de barras escaneados:</h2>
@@ -22,95 +23,70 @@
 
         // Función para verificar si la fecha está en el pasado (formato DD/MM/YYYY)
         function isPastDate(dateStr) {
-            // Separar la fecha del código de barras en día, mes y año
             const dateParts = dateStr.split('/');
-            const day = parseInt(dateParts[0], 10); // Día
-            const month = parseInt(dateParts[1], 10) - 1; // Mes (base 0)
-            const year = parseInt(dateParts[2], 10); // Año
-
-            // Crear un objeto Date a partir de la fecha del código de barras
+            const day = parseInt(dateParts[0], 10);
+            const month = parseInt(dateParts[1], 10) - 1; // Mes base 0
+            const year = parseInt(dateParts[2], 10);
             const scannedDate = new Date(year, month, day);
-
-            // Obtener la fecha actual (sin la parte de la hora)
             const currentDate = new Date();
-            currentDate.setHours(0, 0, 0, 0); // Establecer la hora a las 00:00:00 para la comparación
-
-            // Devolver true si la fecha escaneada es pasada
+            currentDate.setHours(0, 0, 0, 0); // Sin la parte de hora para comparación
             return scannedDate < currentDate;
         }
 
-        // Función para empezar a capturar la cámara
+        // Función para iniciar la cámara
         function startCamera() {
-            // Usar la API de getUserMedia para acceder a la cámara
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
                 .then(function(stream) {
                     const videoElement = document.getElementById('video');
                     videoElement.srcObject = stream;
-                    videoElement.play();
-                    detectBarcode(videoElement);
+
+                    // Inicializar QuaggaJS cuando el video está listo
+                    videoElement.onloadedmetadata = function () {
+                        Quagga.init({
+                            inputStream: {
+                                name: "Live",
+                                type: "LiveStream",
+                                target: document.querySelector("#video"),
+                                constraints: {
+                                    facingMode: "environment"
+                                }
+                            },
+                            decoder: {
+                                readers: ["ean_reader", "code_128_reader", "upc_reader"]
+                            }
+                        }, function(err) {
+                            if (err) {
+                                console.error("Error al inicializar QuaggaJS:", err);
+                                return;
+                            }
+                            Quagga.start(); // Empezar la detección de código de barras
+                        });
+                    };
                 })
                 .catch(function(error) {
                     console.error("Error al acceder a la cámara: ", error);
                 });
         }
 
-        // Función para detectar el código de barras a través del canvas
-        function detectBarcode(videoElement) {
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-
-            function scan() {
-                // Establecer las dimensiones del canvas para que coincidan con el video
-                canvas.width = videoElement.videoWidth;
-                canvas.height = videoElement.videoHeight;
-                
-                // Dibujar el frame actual del video en el canvas
-                context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-                
-                // Obtener la imagen en formato de datos (ImageData)
-                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                const data = imageData.data;
-
-                // Llamada para detectar el código de barras (lógica simple de detección)
-                // Este es un ejemplo simple, en la vida real deberías usar una librería como jsQR o Quagga
-                for (let i = 0; i < data.length; i += 4) {
-                    // Esto es solo un ejemplo básico de cómo podría funcionar la lógica
-                    // Aquí debería ir tu lógica de análisis para detectar patrones del código de barras
-                    // Esto puede ser más avanzado utilizando algo como jsQR o una librería local de decodificación de códigos de barras
-
-                    // Por ejemplo, supongamos que detectamos que el código de barras es una fecha (esto es solo un ejemplo)
-                    const barcode = '15/08/2021 Producto XYZ';  // Este sería el código de barras detectado en este ejemplo
-                    handleDetectedBarcode(barcode);
-                    break;
-                }
-
-                requestAnimationFrame(scan);
-            }
-
-            scan();
-        }
-
-        // Función que maneja el código de barras detectado
+        // Función para manejar el código de barras detectado
         function handleDetectedBarcode(barcode) {
+            // Mostrar el código de barras en la página
             if (output.textContent !== barcode) {
-                output.textContent = barcode; // Mostrar el código de barras en la página
+                output.textContent = barcode;
 
                 // Crear un nuevo elemento de lista y agregarlo
                 const listItem = document.createElement("li");
                 listItem.textContent = barcode;
 
-                // Extraer la fecha del código de barras (asumiendo formato DD/MM/YYYY)
-                const dateMatch = barcode.match(/^(\d{2}\/\d{2}\/\d{4})/); // Buscar la fecha al principio del texto
+                // Extraer la fecha y el texto adicional
+                const dateMatch = barcode.match(/^(\d{2}\/\d{2}\/\d{4})/); // Buscar la fecha al principio
                 if (dateMatch) {
                     const dateStr = dateMatch[1]; // Fecha encontrada
 
-                    // Verificar si la fecha es pasada
+                    // Verificar si la fecha está en el pasado
                     if (isPastDate(dateStr)) {
-                        // Extraer lo que viene después de la fecha
-                        const extraText = barcode.replace(dateStr, '').trim();
-
-                        // Mostrar una alerta con el mensaje
-                        alert(`"${extraText}" está caducado.`);
+                        const extraText = barcode.replace(dateStr, '').trim(); // Texto posterior a la fecha
+                        alert(`"${extraText}" está caducado.`); // Mostrar el mensaje
                     }
                 }
 
@@ -118,7 +94,13 @@
             }
         }
 
-        // Iniciar la cámara cuando la página se carga
+        // Configuración de QuaggaJS para detectar el código de barras
+        Quagga.onDetected(function(result) {
+            const barcode = result.codeResult.code;
+            handleDetectedBarcode(barcode); // Manejar el código de barras detectado
+        });
+
+        // Iniciar la cámara y QuaggaJS cuando se carga la página
         window.onload = function() {
             startCamera();
         };
