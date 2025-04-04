@@ -25,6 +25,10 @@
         let scannedDate = null;
         let scannedProduct = null;
 
+        // Variable para verificar si ya hemos escaneado la fecha y el producto
+        let isDateScanned = false;
+        let isProductScanned = false;
+
         // Función para verificar si la fecha está en el pasado (formato DD/MM/YYYY)
         function isPastDate(dateStr) {
             const dateParts = dateStr.split('/');
@@ -74,22 +78,29 @@
 
         // Función para manejar el código de barras detectado
         function handleDetectedBarcode(barcode) {
+            // Evitar procesar el mismo código varias veces
+            if (barcode === output.textContent) {
+                return; // Si el código ya fue procesado, no hacer nada
+            }
+
             // Verificar si el código es una fecha o un producto
-            if (scannedDate === null) {
+            if (scannedDate === null && !isDateScanned) {
                 // Intentar interpretar la fecha (suponemos que el primer código es la fecha)
                 const dateMatch = barcode.match(/^(\d{2}\/\d{2}\/\d{4})/); // Buscar la fecha al principio
                 if (dateMatch) {
                     scannedDate = dateMatch[1];
                     output.textContent = `Fecha escaneada: ${scannedDate}`;
                     console.log("Fecha escaneada:", scannedDate);
+                    isDateScanned = true; // Marcar que ya hemos escaneado la fecha
                 }
             }
 
-            if (scannedDate !== null && scannedProduct === null) {
+            if (scannedDate !== null && !isProductScanned) {
                 // Si ya tenemos una fecha, ahora esperamos un producto
                 scannedProduct = barcode;
                 output.textContent = `Producto escaneado: ${scannedProduct}`;
                 console.log("Producto escaneado:", scannedProduct);
+                isProductScanned = true; // Marcar que ya hemos escaneado el producto
 
                 // Después de escanear el producto, verificamos la fecha
                 if (isPastDate(scannedDate)) {
