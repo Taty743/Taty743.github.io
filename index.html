@@ -26,8 +26,8 @@
 
         // Function to check if the date is in the past (DD/MM/YYYY format)
         function isPastDate(dateStr) {
-            // Split the barcode text (DD/MM/YYYY) into day, month, and year
-            const dateParts = dateStr.split('/');
+            // Extract the date part (assumes it's at the beginning of the barcode text)
+            const dateParts = dateStr.split(' ')[0].split('/');
             const day = parseInt(dateParts[0], 10); // Day
             const month = parseInt(dateParts[1], 10) - 1; // Month (zero-based)
             const year = parseInt(dateParts[2], 10); // Year
@@ -76,7 +76,7 @@
                 const listItem = document.createElement("li");
                 listItem.textContent = barcode;
 
-                // Check if the barcode date is in the past
+                // Check if the barcode date (the part before the first space) is in the past
                 if (isPastDate(barcode)) {
                     listItem.style.color = "red"; // If the date has passed, set the text color to red
                 }
