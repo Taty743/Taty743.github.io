@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Scanner with Push Notifications</title>
-
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.8.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.8.0/firebase-messaging.js"></script>
+    <title>Barcode Scanner with Alerts</title>
+    <!-- Import QuaggaJS library for barcode detection -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 </head>
 <body>
     <h1>Barcode Scanner</h1>
@@ -21,51 +19,88 @@
     <ul id="barcode-list"></ul>
 
     <script>
-        // Firebase configuration (replace with your own config from Firebase Console)
-        const firebaseConfig = {
-            apiKey: "your-api-key",
-            authDomain: "your-auth-domain.firebaseapp.com",
-            projectId: "your-project-id",
-            storageBucket: "your-storage-bucket.appspot.com",
-            messagingSenderId: "your-sender-id",
-            appId: "your-app-id",
-            measurementId: "your-measurement-id"
-        };
+        const output = document.getElementById("output");
+        const barcodeList = document.getElementById("barcode-list");
 
-        // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const messaging = firebase.messaging();
+        // Function to check if the date is in the past (DD/MM/YYYY format)
+        function isPastDate(dateStr) {
+            // Split the barcode text (DD/MM/YYYY) into day, month, and year
+            const dateParts = dateStr.split('/');
+            const day = parseInt(dateParts[0], 10); // Day
+            const month = parseInt(dateParts[1], 10) - 1; // Month (zero-based)
+            const year = parseInt(dateParts[2], 10); // Year
 
-        // Request notification permission from the user
-        async function requestPermission() {
-            try {
-                await Notification.requestPermission();
-                if (Notification.permission === "granted") {
-                    console.log("Notification permission granted.");
-                    // Get the registration token
-                    const token = await messaging.getToken({ vapidKey: "your-vapid-key" });
-                    console.log("FCM Token:", token);
-                    // You can send this token to your backend to send notifications
-                } else {
-                    console.log("Notification permission denied.");
-                }
-            } catch (error) {
-                console.error("Error getting notification permission:", error);
-            }
+            // Create a Date object from the parsed date
+            const scannedDate = new Date(year, month, day);
+
+            // Get the current date (without time for comparison)
+            const currentDate = new Date();
+            currentDate.setHours(0, 0, 0, 0); // Set time to 00:00:00 for comparison
+
+            // Return true if the scanned date is in the past
+            return scannedDate < currentDate;
         }
 
-        // Call this function to start requesting permission
-        requestPermission();
-
-        // Listen for foreground notifications
-        messaging.onMessage((payload) => {
-            console.log("Message received: ", payload);
-            // Customize how you want to display the notification in the web app
-            new Notification(payload.notification.title, {
-                body: payload.notification.body,
-                icon: payload.notification.icon,
-            });
+        // Initialize QuaggaJS for barcode scanning
+        Quagga.init({
+            inputStream: {
+                name: "Live",
+                type: "LiveStream",
+                target: document.querySelector("#video"), // Use the video element
+                constraints: {
+                    facingMode: "environment" // Use the back camera
+                }
+            },
+            decoder: {
+                readers: ["ean_reader", "code_128_reader", "upc_reader"] // Common barcode formats
+            }
+        }, function(err) {
+            if (err) {
+                console.error("Error initializing Quagga:", err);
+                return;
+            }
+            Quagga.start(); // Start barcode scanning
         });
+
+        // Listen for detected barcodes
+        Quagga.onDetected(function(result) {
+            const barcode = result.codeResult.code; // Extract the barcode text
+
+            // Display the barcode once
+            if (output.textContent !== barcode) {
+                output.textContent = barcode; // Display the latest scanned barcode
+
+                // Create a new list item and add it to the list
+                const listItem = document.createElement("li");
+                listItem.textContent = barcode;
+
+                // Check if the barcode date is in the past
+                if (isPastDate(barcode)) {
+                    // If the date has passed, show an alert
+                    alert("¡El código de barras contiene una fecha pasada!");
+                }
+
+                barcodeList.appendChild(listItem);
+            }
+        });
+
+        // Function to start the video stream (camera)
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                .then(function(stream) {
+                    const videoElement = document.getElementById('video');
+                    videoElement.srcObject = stream;
+                    videoElement.play();
+                })
+                .catch(function(error) {
+                    console.error("Error accessing camera: ", error);
+                });
+        }
+
+        // Start the camera when the page loads
+        window.onload = function() {
+            startCamera();
+        };
     </script>
 </body>
 </html>
