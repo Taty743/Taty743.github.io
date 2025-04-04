@@ -78,12 +78,41 @@
 
                 // Check if the barcode date (the part before the first space) is in the past
                 if (isPastDate(barcode)) {
-                    listItem.style.color = "red"; // If the date has passed, set the text color to red
+                    // If the date is in the past, send a notification to the user
+                    sendNotification("Fecha pasada", "¡El código de barras contiene una fecha pasada!");
+
+                    // Optionally, you can change the text color to show it's a past date
+                    listItem.style.color = "red"; // Change color to red for visual cue
                 }
 
                 barcodeList.appendChild(listItem);
             }
         });
+
+        // Function to send a browser notification
+        function sendNotification(title, body) {
+            // Check if the browser supports notifications
+            if ("Notification" in window) {
+                // Ask for permission if not already granted
+                if (Notification.permission === "granted") {
+                    // Create and show the notification
+                    new Notification(title, {
+                        body: body,
+                        icon: "https://via.placeholder.com/150", // Optional icon for the notification
+                    });
+                } else if (Notification.permission !== "denied") {
+                    // Request permission if not yet granted
+                    Notification.requestPermission().then(permission => {
+                        if (permission === "granted") {
+                            new Notification(title, {
+                                body: body,
+                                icon: "https://via.placeholder.com/150",
+                            });
+                        }
+                    });
+                }
+            }
+        }
     </script>
 </body>
 </html>
