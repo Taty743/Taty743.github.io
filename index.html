@@ -29,6 +29,9 @@
         let isDateScanned = false;
         let isProductScanned = false;
 
+        // Variable para controlar el estado de escaneo
+        let isScanning = false; // Para evitar duplicados
+
         // Función para verificar si la fecha está en el pasado (formato DD/MM/YYYY)
         function isPastDate(dateStr) {
             const dateParts = dateStr.split('/');
@@ -78,9 +81,15 @@
 
         // Función para manejar el código de barras detectado
         function handleDetectedBarcode(barcode) {
-            // Evitar procesar el mismo código varias veces
+            // Evitar procesar el mismo código varias veces si ya estamos escaneando algo
+            if (isScanning) return; // Si ya estamos escaneando, no hacer nada
+
+            isScanning = true; // Marcar que estamos procesando un código
+
+            // Evitar procesar el mismo código
             if (barcode === output.textContent) {
-                return; // Si el código ya fue procesado, no hacer nada
+                isScanning = false; // Volver a habilitar el escaneo
+                return;
             }
 
             // Verificar si el código es una fecha o un producto
@@ -123,6 +132,9 @@
                 // o recargar la página automáticamente después de procesar ambos códigos
                 // location.reload(); // Esto recargaría la página si se desea reiniciar
             }
+
+            // Volver a permitir escanear después de procesar el código
+            isScanning = false;
         }
 
         // Configuración de QuaggaJS para detectar el código de barras
